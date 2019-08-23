@@ -74,10 +74,10 @@ function Backup-Settings() {
             Source = "$env:USERPROFILE\Documents\PowerShell\Microsoft.Powershell_profile.ps1"
             Dest   = "PowerShell"
         },
-        @{
-            Source = "$env:USERPROFILE\Documents\PowerShell\NuGet_profile.ps1";
-            Dest   = "PowerShell"
-        },
+        # @{
+        #     Source = "$env:USERPROFILE\Documents\PowerShell\NuGet_profile.ps1";
+        #     Dest   = "PowerShell"
+        # },
         @{
             Source = "$env:USERPROFILE\appdata\local\microsoft\visualstudio\15.0_95eb5983\Settings\CurrentSettings.vssettings"
             Dest   = "VisualStudio2017"
@@ -97,27 +97,36 @@ function Backup-Settings() {
         @{
             Source = "$env:USERPROFILE\.gitconfig"
             Dest   = "Git"
+        },
+        @{
+            Source = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\RoamingState\profiles.json"
+            Dest   = "Terminal"
         }
     )
 
     $script:Settings | ForEach-Object {
-        $source = Get-Item $_.Source
-        $dest = [io.path]::combine($FilesBackupFolder, $_.Dest, $source.Name)
+        if (Test-Path $_.Source) {
+            $source = Get-Item $_.Source
+            $dest = [io.path]::combine($FilesBackupFolder, $_.Dest, $source.Name)
 
-        if ($source -is [System.IO.DirectoryInfo] -And (-Not (Test-Path $dest))) {
-            mkdir -path $dest | Out-Null
-        }
+            if ($source -is [System.IO.DirectoryInfo] -And (-Not (Test-Path $dest))) {
+                mkdir -path $dest | Out-Null
+            }
 
-        if ($source -is [System.IO.DirectoryInfo]) {
+            if ($source -is [System.IO.DirectoryInfo]) {
 
-            # Needed so that it doesn't copy underneath the destination folder from the second run
-            $source = [io.path]::combine($source, "*")
+                # Needed so that it doesn't copy underneath the destination folder from the second run
+                $source = [io.path]::combine($source, "*")
+            }
+            else {
+                New-Item -ItemType File -Path $dest -Force | Out-Null
+            }
+
+            Copy-Item $source $dest -Recurse -Force
         }
         else {
-            New-Item -ItemType File -Path $dest -Force | Out-Null
+            Write-Host "$($_.Source)" not found
         }
-
-        Copy-Item $source $dest -Recurse -Force
     }
 }
 
