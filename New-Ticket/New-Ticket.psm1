@@ -23,6 +23,6 @@ function New-Ticket([String] $reference, [String] $prefix = 'H') {
 // cSpell:ignore
 "@
     
-        & ".\$filename"
+        Start-Process ".\$filename"
     }
 }
