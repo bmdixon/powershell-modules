@@ -1,3 +1,6 @@
+Import-Module SqlServer -ErrorAction Stop
+Import-Module 7Zip4Powershell # Install-Module -Name 7Zip4Powershell
+
 function New-TemporaryDirectory {
     $parent = [System.IO.Path]::GetTempPath()
     [string] $name = [System.Guid]::NewGuid()
@@ -9,7 +12,9 @@ function Write-Archives() {
         [ValidateNotNullOrEmpty()]
         [String] $BackupLocation,
         [ValidateNotNullOrEmpty()]
-        [String] $FilesBackupFolder
+        [String] $FilesBackupFolder,
+        [ValidateNotNullOrEmpty()]
+        [String] $DatabaseBackupFolder
     )
     
     $script:ArchivePaths = @(
@@ -27,10 +32,15 @@ function Write-Archives() {
             Source      = "$env:USERPROFILE\.vscode"
             Name        = "VSCode"
             ProcessName = "code"
-        }
+        },
         @{
             Source      = $FilesBackupFolder
             Name        = "Files"
+            ProcessName = ""
+        },
+        @{
+            Source      = $DatabaseBackupFolder
+            Name        = "Databases"
             ProcessName = ""
         }
     )
@@ -42,11 +52,13 @@ function Write-Archives() {
             Write-Host "$($_.ProcessName) closed, continuing..."
         }
 
-        $dest = $_.Name
+        $dest = "$($_.Name).7z"
 
-        Compress-Archive -Path $_.Source -DestinationPath $dest -Force -CompressionLevel Optimal
+        # Compress-Archive has a file size limit of 2GB so use Compress7zip instead
+        # Compress-Archive -Path $_.Source -DestinationPath $dest -Force -CompressionLevel Optimal
+        Compress-7Zip -Path $_.Source -ArchiveFileName $dest -CompressionLevel Normal
         if ($null -ne $BackupLocation) {
-            Move-Item -Path "$($dest).zip" -Destination $BackupLocation -Force
+            Move-Item -Path "$($dest)" -Destination $BackupLocation -Force
         }
     }
 }
@@ -66,18 +78,10 @@ function Backup-Settings() {
             Source = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.Powershell_profile.ps1"
             Dest   = "WindowsPowerShell"
         },
-        # @{
-        #     Source = "$env:USERPROFILE\Documents\WindowsPowerShell\NuGet_profile.ps1"
-        #     Dest   = "WindowsPowerShell"
-        # },
         @{
             Source = "$env:USERPROFILE\Documents\PowerShell\Microsoft.Powershell_profile.ps1"
             Dest   = "PowerShell"
         },
-        # @{
-        #     Source = "$env:USERPROFILE\Documents\PowerShell\NuGet_profile.ps1";
-        #     Dest   = "PowerShell"
-        # },
         @{
             Source = "$env:USERPROFILE\appdata\local\microsoft\visualstudio\15.0_95eb5983\Settings\CurrentSettings.vssettings"
             Dest   = "VisualStudio2017"
@@ -99,7 +103,7 @@ function Backup-Settings() {
             Dest   = "Git"
         },
         @{
-            Source = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\RoamingState\profiles.json"
+            Source = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\profiles.json"
             Dest   = "Terminal"
         }
     )
@@ -130,20 +134,60 @@ function Backup-Settings() {
     }
 }
 
+function Backup-Databases() {
+    Param (
+        [ValidateNotNullOrEmpty()]
+        [String] $BackupLocation,
+        [ValidateNotNullOrEmpty()]
+        [String] $DatabaseBackupFolder
+    )
+
+    $Date = (Get-Date -format "yyyyMMddHHmm")
+    $backupPath = [io.path]::combine($BackupLocation, $DatabaseBackupFolder)
+    New-Item -Path $backupPath -ItemType "directory" | Out-Null
+    $Acl = Get-Acl $backupPath
+    $Ar = New-Object  system.security.accesscontrol.filesystemaccessrule("MSSQLServer", "FullControl", "Allow")
+    $Acl.SetAccessRule($Ar)
+    Set-Acl $backupPath $Acl
+
+    Push-Location "SQLSERVER:\SQL\localhost\DEFAULT\Databases"
+    foreach ($database in (Get-ChildItem)) {
+        $dbName = $database.Name
+        Write-Host "Backing up $dbName..."
+        Backup-SqlDatabase -Database $dbName -CompressionOption On -BackupFile "$backupPath\$dbName-$Date.bak"
+    }
+    Pop-Location
+
+    Push-Location "SQLSERVER:\SQL\(localdb)\mssqllocaldb\Databases"
+    foreach ($database in (Get-ChildItem)) {
+        $dbName = $database.Name
+        Write-Host "Backing up $dbName..."
+        Backup-SqlDatabase -Database $dbName -BackupFile "$backupPath\$dbName-$Date.bak"
+    }
+    Pop-Location
+
+}
 function Backup-Data() {
     Param (
         [ValidateNotNullOrEmpty()]
         [String] $BackupLocation = "$($env:OneDriveCommercial)\Backups",
         [ValidateNotNullOrEmpty()]
-        [String] $FilesBackupFolder = ".\Files"
+        [String] $FilesBackupFolder = ".\Files",
+        [ValidateNotNullOrEmpty()]
+        [String] $DatabaseBackupFolder = "Databases"
     )
 
+    Push-Location # Store current working directory
+    
     $tempPath = $(New-TemporaryDirectory)
     Push-Location $tempPath
     Backup-Settings $FilesBackupFolder
-    Write-Archives $BackupLocation $FilesBackupFolder
+    Backup-Databases $tempPath $DatabaseBackupFolder
+    Write-Archives $BackupLocation $FilesBackupFolder $DatabaseBackupFolder
     Pop-Location
     Remove-Item $tempPath -Recurse -Force
+    
+    Pop-Location # Restore working directory
     Write-Host
     Write-Host Press any key to exit...
     Read-Host
