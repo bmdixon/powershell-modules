@@ -1,4 +1,4 @@
-Import-Module SqlServer -ErrorAction Stop
+Import-Module SqlServer -ErrorAction Stop # Install-Module -Name SqlServer
 Import-Module 7Zip4Powershell # Install-Module -Name 7Zip4Powershell
 
 function New-TemporaryDirectory {
@@ -17,48 +17,31 @@ function Write-Archives() {
         [String] $DatabaseBackupFolder
     )
     
-    $script:ArchivePaths = @(
-        @{
-            Source      = "C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\Backup"
-            Name        = "SQL_Backup"
-            ProcessName = ""
-        },
-        @{
-            Source      = "$($env:LOCALAPPDATA)\Google\Chrome\User Data\Default"
-            Name        = "Chrome"
-            ProcessName = "chrome"
-        },
-        @{
-            Source      = "$env:USERPROFILE\.vscode"
-            Name        = "VSCode"
-            ProcessName = "code"
-        },
-        @{
-            Source      = $FilesBackupFolder
-            Name        = "Files"
-            ProcessName = ""
-        },
-        @{
-            Source      = $DatabaseBackupFolder
-            Name        = "Databases"
-            ProcessName = ""
-        }
-    )
-
-    $script:ArchivePaths | ForEach-Object {
+    $script:config.ArchivePaths | ForEach-Object {
         if ($_.ProcessName -and $null -ne (Get-Process $_.ProcessName -ErrorAction SilentlyContinue)) {
-            Write-Host "Waiting on $($_.ProcessName)... Please close any open instances..."
+            Write-Host "Waiting on $($_.ProcessName)... Please close any open instances..."  -ForegroundColor Red
             Wait-Process -InputObject (Get-Process $_.ProcessName)
-            Write-Host "$($_.ProcessName) closed, continuing..."
+            Write-Host "$($_.ProcessName) closed, continuing..."  -ForegroundColor Yellow
         }
 
-        $dest = "$($_.Name).7z"
-
-        # Compress-Archive has a file size limit of 2GB so use Compress7zip instead
-        # Compress-Archive -Path $_.Source -DestinationPath $dest -Force -CompressionLevel Optimal
-        Compress-7Zip -Path $_.Source -ArchiveFileName $dest -CompressionLevel Normal
-        if ($null -ne $BackupLocation) {
-            Move-Item -Path "$($dest)" -Destination $BackupLocation -Force
+        $source = $ExecutionContext.InvokeCommand.ExpandString($_.Source)
+        if ($_.Use7zip) {
+            $dest = "$($_.Name).7z"
+        
+            # Compress-Archive has a file size limit of 2GB so use Compress7zip instead
+            # Compress-Archive -Path $_.Source -DestinationPath $dest -Force -CompressionLevel Optimal
+            Compress-7Zip -Path $source -ArchiveFileName $dest -CompressionLevel Normal
+            if ($null -ne $BackupLocation) {
+                Move-Item -Path "$($dest)" -Destination $BackupLocation -Force
+            }
+        }
+        else {
+            $dest = "$($_.Name).zip"
+        
+            Compress-Archive -Path $source -DestinationPath $dest -Force -CompressionLevel Optimal
+            if ($null -ne $BackupLocation) {
+                Move-Item -Path "$($dest)" -Destination $BackupLocation -Force
+            }
         }
     }
 }
@@ -69,48 +52,10 @@ function Backup-Settings() {
         [String] $FilesBackupFolder
     )
 
-    $script:Settings = @(
-        @{
-            Source = "$env:USERPROFILE\AppData\Roaming\Code\User"
-            Dest   = "vscode"
-        },
-        @{
-            Source = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.Powershell_profile.ps1"
-            Dest   = "WindowsPowerShell"
-        },
-        @{
-            Source = "$env:USERPROFILE\Documents\PowerShell\Microsoft.Powershell_profile.ps1"
-            Dest   = "PowerShell"
-        },
-        @{
-            Source = "$env:USERPROFILE\appdata\local\microsoft\visualstudio\15.0_95eb5983\Settings\CurrentSettings.vssettings"
-            Dest   = "VisualStudio2017"
-        },
-        @{
-            Source = "$env:USERPROFILE\appdata\local\microsoft\visualstudio\16.0_379a93ea\settings\CurrentSettings.vssettings"
-            Dest   = "VisualStudio2019"
-        },
-        @{
-            Source = "$env:USERPROFILE\Documents\SQL Server Management Studio\Templates\XEventTemplates\Debug.xml"
-            Dest   = "SQLExtendedEvents"
-        },
-        @{
-            Source = "$env:USERPROFILE\Documents\SQL Server Management Studio\ViewSetting.viewsetting"
-            Dest   = "SQLExtendedEvents"
-        },
-        @{
-            Source = "$env:USERPROFILE\.gitconfig"
-            Dest   = "Git"
-        },
-        @{
-            Source = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\profiles.json"
-            Dest   = "Terminal"
-        }
-    )
-
-    $script:Settings | ForEach-Object {
-        if (Test-Path $_.Source) {
-            $source = Get-Item $_.Source
+    $script:config.SettingsPaths | ForEach-Object {
+        $sourcePath = $ExecutionContext.InvokeCommand.ExpandString($_.Source)
+        if (Test-Path $sourcePath) {
+            $source = Get-Item $sourcePath
             $dest = [io.path]::combine($FilesBackupFolder, $_.Dest, $source.Name)
 
             if ($source -is [System.IO.DirectoryInfo] -And (-Not (Test-Path $dest))) {
@@ -118,7 +63,6 @@ function Backup-Settings() {
             }
 
             if ($source -is [System.IO.DirectoryInfo]) {
-
                 # Needed so that it doesn't copy underneath the destination folder from the second run
                 $source = [io.path]::combine($source, "*")
             }
@@ -129,7 +73,7 @@ function Backup-Settings() {
             Copy-Item $source $dest -Recurse -Force
         }
         else {
-            Write-Host "$($_.Source)" not found
+            Write-Host "$($sourcePath)" not found
         }
     }
 }
@@ -168,15 +112,14 @@ function Backup-Databases() {
 
 }
 function Backup-Data() {
-    Param (
-        [ValidateNotNullOrEmpty()]
-        [String] $BackupLocation = "$($env:OneDriveCommercial)\Backups",
-        [ValidateNotNullOrEmpty()]
-        [String] $FilesBackupFolder = ".\Files",
-        [ValidateNotNullOrEmpty()]
-        [String] $DatabaseBackupFolder = "Databases"
-    )
+    Param ()
 
+    # Load settings from config file
+    $script:config = Get-Content $PSScriptRoot\config.json | ConvertFrom-Json
+
+    $BackupLocation = $ExecutionContext.InvokeCommand.ExpandString($script:config.BackupLocation)
+    $FilesBackupFolder = ".\Files"
+    $DatabaseBackupFolder = "Databases"
     Push-Location # Store current working directory
     
     $tempPath = $(New-TemporaryDirectory)
