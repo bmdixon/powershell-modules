@@ -1,4 +1,4 @@
-function Write-Log() {
+function Write-ToLog() {
     $date = Get-Date -format "yyyy-MM-dd"
 
     $message = "$($date) | $($args)"
