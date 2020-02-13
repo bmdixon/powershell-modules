@@ -4,7 +4,6 @@ function Invoke-Git-Status {
         [string]
         $Path,
         [Parameter(Mandatory = $true)]
-        [ValidateSet("pull", "push", "prune", "reset", "")]
         $Action,
         [Parameter(Mandatory = $true)]
         [string]
@@ -27,6 +26,9 @@ function Invoke-Git-Status {
             if ($null -ne (npm list -g --depth=0 | Select-String git-removed-branches)) {
                 git removed-branches --prune
             }
+            else {
+                Write-Error "npm package 'git-removed-branches' not found"
+            }
         }
         "reset" {
             git reset HEAD --hard
@@ -42,7 +44,7 @@ function Invoke-Git-Status {
 
 function Invoke-Git() {
     param(
-    [ValidateSet("pull", "push", "prune", "reset", "")]
+    [ValidateSet("pull", "push", "prune", "reset", "fetch")]
     $Action,
 
     [string]
@@ -56,3 +58,5 @@ function Invoke-Git() {
         Invoke-Git-Status -Path $RepositoryName -Action $Action -Branch $Branch
     }
 }
+
+Export-ModuleMember Invoke-Git
