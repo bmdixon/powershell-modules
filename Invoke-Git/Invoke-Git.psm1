@@ -11,7 +11,7 @@ function Invoke-Git-Status {
     )
     
     Push-Location $Path
-    Write-Host (Split-Path $Path -Leaf)
+    Write-Host (Split-Path $Path -Leaf) -ForegroundColor Green
 
     git checkout $Branch
 
@@ -27,7 +27,7 @@ function Invoke-Git-Status {
                 git removed-branches --prune
             }
             else {
-                Write-Error "npm package 'git-removed-branches' not found"
+                Write-Error "npm package 'git-removed-branches' not found" -ForegroundColor Red
             }
         }
         "reset" {
