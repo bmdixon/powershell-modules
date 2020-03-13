@@ -45,7 +45,7 @@ function Invoke-Git-Status {
 function Invoke-Git() {
     param(
     [ValidateSet("pull", "push", "prune", "reset", "fetch")]
-    $Action,
+    $Action = "pull",
 
     [string]
     $Branch = "master"
