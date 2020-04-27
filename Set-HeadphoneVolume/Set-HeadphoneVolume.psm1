@@ -3,23 +3,28 @@ function Set-HeadphoneVolume() {
 
     Push-Location "$($profile | Split-Path)\Modules\AudioDeviceCmdlets"
     Import-Module AudioDeviceCmdlets
-    $HeadphonesID = "{0.0.0.00000000}.{349b91a8-939f-4bfe-b02c-f64bc642ccb1}"
-    $HeadphonesName = "Headphones (AKG Y50BT Stereo)"
-    $JabraHeadphonesID = "{0.0.0.00000000}.{78be0308-b450-4955-84ca-9f1b01400d20}"
-    $JabraHeadphonesName = "Headphones (Jabra Elite 65t Stereo)"
+
+    $IDS = @(
+        "{0.0.0.00000000}.{349b91a8-939f-4bfe-b02c-f64bc642ccb1}" #AKG Headphones
+        "{0.0.0.00000000}.{78be0308-b450-4955-84ca-9f1b01400d20}" # Jabra Elite 65 Earphones
+        "{0.0.0.00000000}.{5b8905bc-d1b1-4627-b0da-527aea8c2850}" # Jabra Headset 
+    )
+
+    $NAMES = @(
+       "Headphones (AKG Y50BT Stereo)" #AKG Headphones
+       "Headphones (Jabra Elite 65t Stereo)" # Jabra Elite 65 Earphones
+       "Headset Earphone (Jabra Link 370)" # Jabra Headset
+    )
 
     function HeadphonesAreDefault {
         $DefaultPlayback = Get-AudioDevice -Playback
 
-        return ($DefaultPlayback.ID -eq $HeadphonesID `
-                -or $DefaultPlayback.Name -eq $HeadphonesName `
-                -or $DefaultPlayback.ID -eq $JabraHeadphonesID `
-                -or $DefaultPlayback.Name -eq $JabraHeadphonesName)
+        return $IDS -contains $DefaultPlayback.ID -or $NAMES -contains $DefaultPlayback.Name
     }
 
     If (-Not (HeadphonesAreDefault)) {
         Get-AudioDevice -List | Where-Object { $_.Type -eq "Playback" } | ForEach-Object {
-            if ($_.ID -eq $HeadphonesID -or $_.Name -eq $HeadphonesName -or$_.ID -eq $JabraHeadphonesID -or $_.Name -eq $JabraHeadphonesName ) {            
+            if ($IDS -contains $DefaultPlayback.ID -or $NAMES -contains $DefaultPlayback.Name) {            
                 Set-AudioDevice -ID $_.ID | Out-Null        
             }
         }
