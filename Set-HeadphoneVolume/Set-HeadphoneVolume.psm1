@@ -1,7 +1,7 @@
 function Set-HeadphoneVolume() {
     # https://github.com/frgnca/AudioDeviceCmdlets
+    # Install-Module -Name AudioDeviceCmdlets
 
-    Push-Location "$($profile | Split-Path)\Modules\AudioDeviceCmdlets"
     Import-Module AudioDeviceCmdlets
 
     $IDS = @(
