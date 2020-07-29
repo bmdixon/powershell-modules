@@ -117,7 +117,12 @@ function Backup-Data() {
     # Load settings from config file
     $script:config = Get-Content $PSScriptRoot\config.json | ConvertFrom-Json
 
-    $BackupLocation = $ExecutionContext.InvokeCommand.ExpandString($script:config.BackupLocation)
+    $BackupDestination = $ExecutionContext.InvokeCommand.ExpandString($script:config.BackupLocation)
+
+    if (!(Test-Path $BackupDestination)) {
+        New-Item -ItemType Directory -Force -Path $BackupDestination | Out-Null
+    }
+
     $FilesBackupFolder = ".\Files"
     $DatabaseBackupFolder = "Databases"
     Push-Location # Store current working directory
@@ -126,7 +131,7 @@ function Backup-Data() {
     Push-Location $tempPath
     Backup-Settings $FilesBackupFolder
     Backup-Databases $tempPath $DatabaseBackupFolder
-    Write-Archives $BackupLocation $FilesBackupFolder $DatabaseBackupFolder
+    Write-Archives $BackupDestination $FilesBackupFolder $DatabaseBackupFolder
     Pop-Location
     Remove-Item $tempPath -Recurse -Force
     
