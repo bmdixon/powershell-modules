@@ -1,5 +1,5 @@
 {
-  "BackupLocation": "$($env:OneDriveCommercial)\\BackupsTest",
+  "BackupLocation": "$($env:OneDriveCommercial)\\Backups\\",
   "ArchivePaths": [
     {
       "Name": "Files",
@@ -54,7 +54,7 @@
       "Dest": "Git"
     },
     {
-      "Source": "$env:LOCALAPPDATA\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\profiles.json",
+      "Source": "$env:LOCALAPPDATA\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json",
       "Dest": "Terminal"
     }
   ]
