@@ -4,32 +4,27 @@
     {
       "Name": "Files",
       "Source": "$FilesBackupFolder",
-      "ProcessName": null,
-      "Use7zip": false
+      "ProcessName": null
     },
     {
       "Name": "SQL_Backup",
       "Source": "C:\\Program Files\\Microsoft SQL Server\\MSSQL14.MSSQLSERVER\\MSSQL\\Backup",
-      "ProcessName": null,
-      "Use7zip": true
+      "ProcessName": null
     },
     {
       "Name": "Databases",
       "Source": "$DatabaseBackupFolder",
-      "ProcessName": null,
-      "Use7zip": true
+      "ProcessName": null
     },
     {
       "Name": "Chrome",
       "Source": "$($env:LOCALAPPDATA)\\Google\\Chrome\\User Data\\Default",
-      "ProcessName": "chrome",
-      "Use7zip": false
+      "ProcessName": "chrome"
     },
     {
       "Name": "VSCode",
       "Source": "$env:USERPROFILE\\.vscode",
-      "ProcessName": "code",
-      "Use7zip": false
+      "ProcessName": "code"
     }
   ],
   "SettingsPaths": [

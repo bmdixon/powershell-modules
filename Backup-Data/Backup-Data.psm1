@@ -24,24 +24,14 @@ function Write-Archives() {
             Write-Host "$($_.ProcessName) closed, continuing..."  -ForegroundColor Yellow
         }
 
-        $source = $ExecutionContext.InvokeCommand.ExpandString($_.Source)
-        if ($_.Use7zip) {
-            $dest = "$($_.Name).7z"
-        
-            # Compress-Archive has a file size limit of 2GB so use Compress7zip instead
-            # Compress-Archive -Path $_.Source -DestinationPath $dest -Force -CompressionLevel Optimal
-            Compress-7Zip -Path $source -ArchiveFileName $dest -CompressionLevel Normal
-            if ($null -ne $BackupLocation) {
-                Move-Item -Path "$($dest)" -Destination $BackupLocation -Force
-            }
-        }
-        else {
-            $dest = "$($_.Name).zip"
-        
-            Compress-Archive -Path $source -DestinationPath $dest -Force -CompressionLevel Optimal
-            if ($null -ne $BackupLocation) {
-                Move-Item -Path "$($dest)" -Destination $BackupLocation -Force
-            }
+        $source = Convert-Path ($ExecutionContext.InvokeCommand.ExpandString($_.Source))
+        $dest = "$($_.Name).7z"
+    
+        # Compress-Archive has a file size limit of 2GB so use Compress7zip instead
+        # Compress-Archive -Path $_.Source -DestinationPath $dest -Force -CompressionLevel Optimal
+        Compress-7Zip -Path $source -ArchiveFileName $dest -CompressionLevel Normal -PreserveDirectoryRoot
+        if ($null -ne $BackupLocation) {
+            Move-Item -Path "$($dest)" -Destination $BackupLocation -Force
         }
     }
 }
