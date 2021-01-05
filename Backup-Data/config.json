@@ -7,16 +7,6 @@
       "ProcessName": null
     },
     {
-      "Name": "SQL_Backup",
-      "Source": "C:\\Program Files\\Microsoft SQL Server\\MSSQL14.MSSQLSERVER\\MSSQL\\Backup",
-      "ProcessName": null
-    },
-    {
-      "Name": "Databases",
-      "Source": "$DatabaseBackupFolder",
-      "ProcessName": null
-    },
-    {
       "Name": "Chrome",
       "Source": "$($env:LOCALAPPDATA)\\Google\\Chrome\\User Data\\Default",
       "ProcessName": "chrome"
@@ -25,6 +15,16 @@
       "Name": "VSCode",
       "Source": "$env:USERPROFILE\\.vscode",
       "ProcessName": "code"
+    },
+    {
+      "Name": "SQL_Backup",
+      "Source": "C:\\Program Files\\Microsoft SQL Server\\MSSQL14.MSSQLSERVER\\MSSQL\\Backup",
+      "ProcessName": null
+    },
+    {
+      "Name": "Databases",
+      "Source": "$DatabaseBackupFolder",
+      "ProcessName": null
     }
   ],
   "SettingsPaths": [
