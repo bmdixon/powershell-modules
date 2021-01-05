@@ -36,6 +36,14 @@ function Invoke-Git-Status {
         "fetch" {
             git fetch
         }
+        "migratemain" {
+            git checkout master
+            git branch -m master main
+            git fetch
+            git branch --unset-upstream
+            git branch -u origin/main
+            git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+        }
     }
 
     Pop-Location
@@ -44,11 +52,11 @@ function Invoke-Git-Status {
 
 function Invoke-Git() {
     param(
-    [ValidateSet("pull", "push", "prune", "reset", "fetch")]
+    [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain")]
     $Action = "pull",
 
     [string]
-    $Branch = "master"
+    $Branch = "main"
 )
     $Repositories = Get-ChildItem -Directory | Select-Object Name
 
