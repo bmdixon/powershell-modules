@@ -25,7 +25,7 @@ function New-Ticket([String] $reference, [String] $prefix = 'H') {
 
 // cSpell:ignore
 "@
-    
-        Start-Process ".\$filename"
+        Invoke-Item .
+        Set-Clipboard (Join-Path $pwd -ChildPath $filename)
     }
 }

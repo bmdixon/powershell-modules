@@ -88,7 +88,7 @@ function Backup-Databases() {
     foreach ($database in (Get-ChildItem)) {
         $dbName = $database.Name
         Write-Host "Backing up $dbName..."
-        Backup-SqlDatabase -Database $dbName -CompressionOption On -BackupFile "$backupPath\$dbName-$Date.bak"
+        Backup-SqlDatabase -Database $dbName -CompressionOption On -BackupFile "$backupPath\$dbName-$Date.bak" -CopyOnly
     }
     Pop-Location
 
@@ -96,7 +96,7 @@ function Backup-Databases() {
     foreach ($database in (Get-ChildItem)) {
         $dbName = $database.Name
         Write-Host "Backing up $dbName..."
-        Backup-SqlDatabase -Database $dbName -BackupFile "$backupPath\$dbName-$Date.bak"
+        Backup-SqlDatabase -Database $dbName -BackupFile "$backupPath\$dbName-$Date.bak" -CopyOnly
     }
     Pop-Location
 
