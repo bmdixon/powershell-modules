@@ -44,6 +44,24 @@ function Invoke-Git-Status {
             git branch -u origin/main
             git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
         }
+        "stale" {
+            $TTL = 90 #days
+            $outPath = "$([Environment]::GetFolderPath("Desktop"))\StaleBranches.txt"
+            $borderTime = (Get-Date).AddDays(-$TTL)
+            git fetch origin
+            $remoteBranches = git branch -a | Where-Object { $_ -like '*remotes/origin/*' } | ForEach-Object { $_.trim() }
+            $remoteBranches = $remoteBranches | Where-Object { ($_ -notlike 'remotes/origin/HEAD*') -and ($_ -ne 'remotes/origin/master') -and ($_ -ne 'remotes/origin/main') -and ($_ -notlike 'remotes/origin/release*') -and ($_ -notlike 'remotes/origin/escrow*') }
+            "`r`n#### $(Split-Path -Path $pwd -Leaf) ####" | Add-Content $outPath
+            "$(git config --get remote.origin.url)/branches?_a=stale" | Add-Content $outPath
+            foreach ($branch in $remoteBranches) {
+                $branchName = ($branch.Split('/', 3))[2]
+                $branchSHA = git rev-parse origin/$branchName
+                $branchLastUpdate = [DateTime]::Parse($(git show -s --format=%ci $branchSHA))
+                if ($branchLastUpdate -lt $borderTime) {
+                    $branchName | Add-Content $outPath
+                }
+            }
+        }
     }
 
     Pop-Location
@@ -52,7 +70,7 @@ function Invoke-Git-Status {
 
 function Invoke-Git() {
     param(
-    [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain")]
+        [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain", "stale")]
     $Action = "pull",
 
     [string]
