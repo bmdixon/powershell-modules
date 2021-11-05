@@ -77,18 +77,25 @@ function Backup-Databases() {
     )
 
     $Date = (Get-Date -format "yyyyMMddHHmm")
-    $backupPath = [io.path]::combine($BackupLocation, $DatabaseBackupFolder)
-    New-Item -Path $backupPath -ItemType "directory" | Out-Null
-    $Acl = Get-Acl $backupPath
+    $SqlServerbackupPath = [io.path]::combine($BackupLocation, $DatabaseBackupFolder, "SQLServer")
+    $LocalDBbackupPath = [io.path]::combine($BackupLocation, $DatabaseBackupFolder, "mssqllocaldb")
+    New-Item -Path $SqlServerbackupPath -ItemType "directory" | Out-Null
+    $Acl = Get-Acl $SqlServerbackupPath
     $Ar = New-Object  system.security.accesscontrol.filesystemaccessrule("MSSQLServer", "FullControl", "Allow")
     $Acl.SetAccessRule($Ar)
-    Set-Acl $backupPath $Acl
+    Set-Acl $SqlServerbackupPath $Acl
+    
+    New-Item -Path $LocalDBbackupPath -ItemType "directory" | Out-Null
+    $Acl = Get-Acl $LocalDBbackupPath
+    $Ar = New-Object  system.security.accesscontrol.filesystemaccessrule("MSSQLServer", "FullControl", "Allow")
+    $Acl.SetAccessRule($Ar)
+    Set-Acl $LocalDBbackupPath $Acl
 
     Push-Location "SQLSERVER:\SQL\localhost\DEFAULT\Databases"
     foreach ($database in (Get-ChildItem)) {
         $dbName = $database.Name
         Write-Host "Backing up $dbName..."
-        Backup-SqlDatabase -Database $dbName -CompressionOption On -BackupFile "$backupPath\$dbName-$Date.bak" -CopyOnly
+        Backup-SqlDatabase -Database $dbName -CompressionOption On -BackupFile "$SqlServerbackupPath\$dbName-$Date.bak" -CopyOnly
     }
     Pop-Location
 
@@ -96,7 +103,7 @@ function Backup-Databases() {
     foreach ($database in (Get-ChildItem)) {
         $dbName = $database.Name
         Write-Host "Backing up $dbName..."
-        Backup-SqlDatabase -Database $dbName -BackupFile "$backupPath\$dbName-$Date.bak" -CopyOnly
+        Backup-SqlDatabase -Database $dbName -BackupFile "$LocalDBbackupPath\$dbName-$Date.bak" -CopyOnly
     }
     Pop-Location
 
