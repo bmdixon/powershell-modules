@@ -14,10 +14,10 @@ function New-Ticket([String] $reference, [String] $prefix = 'H') {
 # REQUIREMENTS
 
 
-# TASK NOTES
+# RESPONSE
 
 
-# ENABLE NOTES
+# PRIVATE NOTES
 
 
 # DEPLOYMENT INSTRUCTIONS
