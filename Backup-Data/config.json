@@ -53,6 +53,10 @@
       "Dest": "Terminal"
     },
     {
+      "Source": "$env:LOCALAPPDATA\\Packages\\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\\LocalState\\settings.json",
+      "Dest": "TerminalPreview"
+    },
+    {
       "Source": "$env:USERPROFILE\\.oh-my-posh.json",
       "Dest": "PowerShell"
     }
