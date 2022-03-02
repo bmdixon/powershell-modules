@@ -23,8 +23,9 @@ function Invoke-Git-Status {
             git push
         }
         "prune" {
+            git fetch
             if ($null -ne (npm list -g --depth=0 | Select-String git-removed-branches)) {
-                git removed-branches --prune
+                git removed-branches --prune --force
             }
             else {
                 Write-Error "npm package 'git-removed-branches' not found" -ForegroundColor Red
@@ -62,6 +63,48 @@ function Invoke-Git-Status {
                 }
             }
         }
+        "ports" {   
+            git checkout -b 'feature/update-ports'
+
+            $Ports = $script:config.Ports
+
+            Get-ChildItem -r -Exclude *.exe `
+            | Where-Object { $_ -notmatch 'node_modules' }`
+            | Where-Object { $_ -notmatch 'packages' }`
+            | Where-Object { $_ -notmatch 'bin' }`
+            | Where-Object { $_ -notmatch 'obj' }`
+            | Where-Object { $_ -notmatch '.angular' }`
+            | Where-Object { $_ -notmatch '.git' }`
+            | Where-Object { !$_.PSIsContainer }`
+            | foreach-object {
+                $filename = $_.FullName
+                $Ports | ForEach-Object {
+                    $file = Get-Content $filename
+                    $oldPort = $_.old
+                    $newPort = $_.new
+                    $containsWord = $file | ForEach-Object { $_ -match $oldPort }
+                    If ($containsWord -contains $true) {
+                        ($file) | foreach-object {
+                            $_ -replace $oldPort, $newPort
+                        } | set-content $filename
+                    }
+                }
+            }
+
+            git add *
+            git commit -m "Update ports"
+            git push --set-upstream origin feature/update-ports
+        }
+        "sqlscript" {
+            If (Test-Path "scripts\configure-identity-server.sql") {
+                Write-Host "Running configure-identity-server.sql for $(Split-Path -Path $pwd -Leaf)"
+                Invoke-Sqlcmd -ServerInstance $script:config.DBInstance -Database $script:config.AuthDbName -InputFile "scripts\configure-identity-server.sql"
+            }
+            If (Test-Path "scripts\configure-user-management.sql") {
+                Write-Host "Running configure-user-management.sql for $(Split-Path -Path $pwd -Leaf)"
+                Invoke-Sqlcmd -ServerInstance $script:config.DBInstance -Database $script:config.UserManagementDbName  -InputFile "scripts\configure-user-management.sql"
+            }
+        }
     }
 
     Pop-Location
@@ -70,18 +113,27 @@ function Invoke-Git-Status {
 
 function Invoke-Git() {
     param(
-        [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain", "stale")]
-    $Action = "pull",
+        [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain", "stale", "ports", "sqlscript")]
+        $Action = "pull",
 
-    [string]
-    $Branch = "main"
-)
+        [string]
+        $Branch = "main"
+    )
+    # Load settings from config file
+    $script:config = Get-Content $PSScriptRoot\config.json | ConvertFrom-Json
+    
     $Repositories = Get-ChildItem -Directory | Select-Object Name
 
     $Repositories | ForEach-Object {
         $RepositoryName = $_.Name
 
-        Invoke-Git-Status -Path $RepositoryName -Action $Action -Branch $Branch
+        $Skip = @(
+        )
+        if ($Skip.Contains($RepositoryName)) {
+        }
+        else {
+            Invoke-Git-Status -Path $RepositoryName -Action $Action -Branch $Branch
+        }
     }
 }
 

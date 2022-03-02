@@ -1,0 +1,15 @@
+{
+    "DBInstance": "(local)",
+    "AuthDbName": "EnableAuthentication",
+    "UserManagementDbName": "enable-user-management",
+    "Ports": [
+        {
+            "old": 123456789,
+            "new": 987654321
+        },
+        {
+            "old": 246897531,
+            "new": 135798642
+        }
+    ]
+}
