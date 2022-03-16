@@ -1,4 +1,4 @@
-function Invoke-Git-Status {
+function Invoke-CustomCommandInternal {
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -111,7 +111,7 @@ function Invoke-Git-Status {
     Write-Host
 }
 
-function Invoke-Git() {
+function Invoke-CustomCommand() {
     param(
         [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain", "stale", "ports", "sqlscript")]
         $Action = "pull",
@@ -132,9 +132,9 @@ function Invoke-Git() {
         if ($Skip.Contains($RepositoryName)) {
         }
         else {
-            Invoke-Git-Status -Path $RepositoryName -Action $Action -Branch $Branch
+            Invoke-CustomCommandInternal -Path $RepositoryName -Action $Action -Branch $Branch
         }
     }
 }
 
-Export-ModuleMember Invoke-Git
+Export-ModuleMember Invoke-CustomCommand
