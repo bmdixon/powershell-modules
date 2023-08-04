@@ -18,7 +18,7 @@
     },
     {
       "Name": "SQL_Backup",
-      "Source": "C:\\Program Files\\Microsoft SQL Server\\MSSQL14.MSSQLSERVER\\MSSQL\\Backup",
+      "Source": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\Backup",
       "ProcessName": null
     },
     {
@@ -41,8 +41,8 @@
       "Dest": "PowerShell"
     },
     {
-      "Source": "$env:USERPROFILE\\appdata\\local\\microsoft\\visualstudio\\16.0_14767561\\settings\\CurrentSettings.vssettings",
-      "Dest": "VisualStudio2019"
+      "Source": "$env:USERPROFILE\\appdata\\local\\microsoft\\visualstudio\\17.0_7c190b2f\\settings\\CurrentSettings.vssettings",
+      "Dest": "VisualStudio2022"
     },
     {
       "Source": "$env:USERPROFILE\\.gitconfig",
@@ -59,6 +59,10 @@
     {
       "Source": "$env:USERPROFILE\\.oh-my-posh.json",
       "Dest": "PowerShell"
+    },
+    {
+      "Source": "$env:USERPROFILE\\.cdHistory",
+      "Dest": "CDHistory"
     }
   ]
 }
