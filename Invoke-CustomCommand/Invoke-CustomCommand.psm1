@@ -105,6 +105,9 @@ function Invoke-CustomCommandInternal {
                 Invoke-Sqlcmd -ServerInstance $script:config.DBInstance -Database $script:config.UserManagementDbName  -InputFile "scripts\configure-user-management.sql"
             }
         }
+        "gitclean" {
+            git maintenance run
+        }
     }
 
     Pop-Location
@@ -113,7 +116,7 @@ function Invoke-CustomCommandInternal {
 
 function Invoke-CustomCommand() {
     param(
-        [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain", "stale", "ports", "sqlscript")]
+        [ValidateSet("pull", "push", "prune", "reset", "fetch", "migratemain", "stale", "ports", "sqlscript", "gitclean")]
         $Action = "pull",
 
         [string]
